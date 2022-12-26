@@ -13,4 +13,5 @@ for i in range(0,input()-2):
   circuit.cx(qreg_q[i], qreg_q[i+2]) 
   circuit.cx(qreg_q[i+1], qreg_q[i+2]) 
   circuit.ccx(qreg_q[i], qreg_q[i+1], qreg_q[i+3])
+circuit.draw('mpl')
 
