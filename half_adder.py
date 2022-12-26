@@ -13,8 +13,11 @@ creg_c = ClassicalRegister(4, 'c')
 #Creates circuit that will act on these qubits and bits
 circuit = QuantumCircuit(qreg_q, creg_c) 
 
-circuit.h(qreg_q[0]) #have a hadamard gate act on qubit 0 --> sets 
-circuit.h(qreg_q[1])
-circuit.cx(qreg_q[0], qreg_q[2])
+#We want our final state vector to represent the results of a half-adder circuit on 00, 01, 10, 11.
+circuit.h(qreg_q[0]) #have a hadamard gate act on q0 --> sets q0 to 0 with 0.5 probability and to 1 with 0.5 probability
+circuit.h(qreg_q[1]) #same for q1
+
+
+circuit.cx(qreg_q[0], qreg_q[2]) #CNOT gate with control q0 and traget q2
 circuit.cx(qreg_q[1], qreg_q[2])
 circuit.ccx(qreg_q[0], qreg_q[1], qreg_q[3])
