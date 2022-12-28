@@ -31,7 +31,7 @@ for i in range(0,2*length):
 #(The carry bit is set to 0 for the first column.)
 #We also compute a new carry bit, to be applied to the next column.
 #So, for our example, we set the sum bit for column 1 to 1, by applying a CNOT gate to the sum bit with the control bits
-#being the two bits in column 1, and the current carry bit (0).
+#being the two bits in column 1 and the current carry bit (0).
 #We set the new carry bit, to be applied in the next column, to 0.
 #We do this by using CNOT, CCNOT, and NOT gates
 #to basically express (bit 1 AND bit 2) or [(bit1 XOR bit2) AND (old carry bit)],
