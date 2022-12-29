@@ -1,4 +1,4 @@
-#Grover's algorithm 
+#Grover's algorithm
 from qiskit import QuantumRegister, ClassicalRegister, QuantumCircuit
 from numpy import pi
 
@@ -29,11 +29,11 @@ circuit.cz(qreg_q[1], qreg_q[0])
 #"password", i.e. the secret N-qubit state we are looking for. Here we have two bits, so
 #1 step should be about enough.
 #I'm not going to go over the logic behind Grover's here, but this article from IBM Quantum has a
-#great explanation.
+#great explanation: https://quantum-computing.ibm.com/composer/docs/iqx/guide/grovers-algorithm
 #But, basically, we take the state vector that was the result of the Oracle, which has the correct "password" marked subtly.
 #Remember, it's marked in such a way that simply measuring our current state won't reveal the "password".
 #So, instead, we take the state vector given to us by the Oracle, and "amplify" this "marking", this difference from the other qubits.
-#We do this by reflecting by "reflecting" all states perpendicular to our current state vector across our state vector.
+#We do this "reflecting" all states perpendicular to our current state vector across our state vector.
 #(Again, the reasoning for this is well explained in the article above).
 #An easy way to do this reflection is to:
 #1) Convert our state vector to an equal superposition of states, using Hadamard gates; call this new state S'.
