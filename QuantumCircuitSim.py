@@ -7,6 +7,10 @@
 #then apply your gate,
 #and then use swap gates again to move the controlled (target) qubit back.
 
+#QuantumCircuitSim2.py contains my other implementation of a Quantum Circuit.
+#That one allows gates to be applied directly to non-adjacent bits (i.e. without the use of
+#repeated swap gates).
+
 import math
 import numpy as np
 import random
