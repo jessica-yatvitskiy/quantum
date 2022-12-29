@@ -1,15 +1,15 @@
-#My own implementation of a Quantum Circuit, without Qiskit
+#My own implementation of a Quantum Circuit, without Qiskit.
+#In this implementation, for controlled gates, it is required that
+#the control qubits be adjacent to the target qubit.
+#If you want to control a qubit that is not adjacent,
+#you will have to use repeated swap gates to move it
+#so that it is adjacent to your controller bit,
+#then apply your gate,
+#and then use swap gates again to move the controlled (target) qubit back.
 
 import math
 import numpy as np
-
-#Used for collapsing qubits to |0> or |1> state, based on probabilities from qubit's statevector
-def qbit_measure(prob):
-    rand = np.random.random_sample()
-    if rand < prob:
-        0
-    else:
-        1
+import random
 
 #Makes a Qubit object, with a number id and a label.
 class Qubit(object):
@@ -103,8 +103,8 @@ class QuantumCircuit(object):
 
     # Pauli Z gate
     def z(self, qubit):
-        XGate = Gate('z', 1, np.array([[1,0],[0,-1]], dtype=complex))
-        self._append(XGate, [qubit], [])
+        ZGate = Gate('z', 1, np.array([[1,0],[0,-1]], dtype=complex))
+        self._append(ZGate, [qubit], [])
         return
 
     # Phase gate (sqrt(Z))
@@ -139,14 +139,20 @@ class QuantumCircuit(object):
 
     # Controlled Z gate (CZ)
     def cz(self, ctrl_qubit, trgt_qubit):
-        CXGate = Gate('cz', 2, np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,-1]], dtype=complex))
-        self._append(CXGate, [ctrl_qubit,trgt_qubit], [])
+        CZGate = Gate('cz', 2, np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,-1]], dtype=complex))
+        self._append(CZGate, [ctrl_qubit,trgt_qubit], [])
         return
 
     # Toffoli gate
     def toffoli(self, ctrl_qubit_1, ctrl_qubit_2, trgt_qubit):
         TFGate = Gate('tf', 3, np.array([[1,0,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,0,1,0,0,0,0,0],[0,0,0,1,0,0,0,0],[0,0,0,0,1,0,0,0],[0,0,0,0,0,1,0,0],[0,0,0,0,0,0,0,1],[0,0,0,0,0,0,1,0]], dtype=complex))
-        self._append(TFGate, [ctrl_qubit,trgt_qubit], [])
+        self._append(TFGate, [ctrl_qubit_1,ctrl_qubit_2,trgt_qubit], [])
+        return
+
+    #Swap gate
+    def swap(self, qubit_1, qubit_2):
+        SWGate = Gate('sw', 2, np.array([[1,0,0,0],[0,0,1,0],[0,1,0,0],[0,0,0,1]], dtype=complex))
+        self._append(SWGate, [qubit_1, qubit_2], [])
         return
 
     # Creates Measurement gate
@@ -160,12 +166,26 @@ class QuantumCircuit(object):
     #When we apply a gate to a some qubits (represented by q_arr), we want the circuit's overall state vector to be updated accordingly
     #Here, we convert the given gate's matrix into a form such that, when later multiplied by the circuit's current state vector,
     #it will achieve this effect.
+    #Say we have n qubits and we want to apply our gate to qubits i and j. Then,
+    #We return the tensor product of i identity matrices, the gate matrix, and n-j identity matrices.
+    #This is equivalent to the tensor product of an identity matrix of dimensions i*i, the gate matrix,
+    #and an identity matrix of dimensions (n-j)*(n-j).
     def tensorizeGate(self, gate, q_arr):
-        I_mat=np.identity(self.num_q) #identity matrix; each row represents a qubit from the circuit (row n = Qubit n)
-        #for each qubit that the gate will be applied to, we place a 1 at the front of the corresponding row,
-        #representing the act of "applying" the gate to that qubit
-        I_mat[q_arr]=[1]+[0]*(self.num_q-1)
-        return np.tensordot(gate.matrix,I_mat,axes=0).reshape(2**self.num_q,2**self.num_q) #takes tensor product of gate with this matrix we made
+        q_arr=np.array(q_arr)
+        if len(q_arr)>1:
+            try:
+                assert(q_arr[1:len(q_arr)]==q_arr[0:len(q_arr)-1]+1) #Make sure we are only using adjacent qubits
+            except AssertionError as msg:
+                print("Qubits for gate must be adjacent. If you want to use non-adjacent qubits, use the swap gate to move them together.")
+                print("Then apply your gate, and use the swap gate to move them back apart again.")
+                assert(q_arr[1:len(q_arr)]==q_arr[0:len(q_arr)-1]+1)
+        q_id1=q_arr[0] #start of qubits that the gate will be applied to
+        q_id2=q_arr[-1] #end of qubits that the gate will be applied to
+        Mat1=np.identity(2**q_id1) #create first identity matrix
+        Mat2=gate.matrix
+        Mat3=np.identity(2**(self.num_q-q_id2-1)) #create second identity matrix
+        Prod1=np.kron(Mat1,Mat2)
+        return(np.kron(Prod1,Mat3)) #return the tensor product
 
     #Evaluates the current instruction (the program counter, self.pc stores the index of the curr instruction in the
     #circuit's instruction list)
@@ -177,17 +197,20 @@ class QuantumCircuit(object):
         if op.name != 'measure': #if the gate is not a measure gate, we just update the state vector according to the instruction
             unitary = self.tensorizeGate(op, q_arr) #converts the gate into a form such that its action will be reflected in the state vector when multiplied
             curr_state = unitary @ curr_state #multiply tensorized gate and state vector to get updated state vector
-            self.curr_state = curr_state
+            self.curr_state = curr_state.reshape((2**self.num_q))
             self.pc += 1 #increase program counter, so that it points to the next instruction
             return False #returns False to represent that we have not performed measurement yet
         else:
             print("Already reached end of circuit (excluding measurements).")
-            for q in q_arr: #For each of the qubits we're measuring:
-                #For each state which represents this qubit being |0>, get the eigenvalue of the current statevector at that state
-                probs_arr=self.curr_state[q*(2**(self.num_q-1)):(q+1)*(2**(self.num_q-1))]
-                probs_arr=probs_arr**2 #square these eigenvalues to get the probabilities for each of the states where this qubit is |0>
-                prob=sum(probs_arr) #add up the probabilities for each of these states to get the overall probability this qubit is |0>.
-                self.cbits.state[c_arr]=qbit_measure(prob) #store this in the corresponding classical bit
+            #Generate probability distribution for qubit states from state vector
+            probabilities = abs(self.curr_state)**2
+            #Based on the probability distribution, pick a state
+            result=bin(random.choices(list(range(0,len(self.curr_state))), weights=probabilities,k=1)[0])
+            #Convert to binary, to get the values of each qubit in that state
+            res = [int(x) for x in str(result[2:])]
+            res=np.array([0]*(self.num_q-len(res))+res)
+            #Store the values of the qubits that we wanted to measure in the correspondin classical bits
+            self.cbits.state[c_arr]=res[q_arr]
             self.pc+=1 #increase program counter, so that it points to the next instruction
             return True #returns True to represent that we have performed measurement
 
@@ -204,3 +227,15 @@ class QuantumCircuit(object):
         #otherwise, we return the final states of all our qubits
         else:
             return self.qubits.state
+
+def testSimulate():
+    qc = QuantumCircuit(2,2)
+    qc.h(0)
+    qc.swap(0,1)
+    qc.measure([0,1],[0,1])
+    outcome = qc.simulate()
+    print(outcome)
+
+testSimulate()
+testSimulate()
+testSimulate()
