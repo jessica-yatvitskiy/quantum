@@ -115,7 +115,7 @@ class QuantumCircuit(object):
 
     # S dagger gate
     def sdg(self, qubit):
-        SGate = Gate('s', 1, np.array([[1,0],[0,-1*j]], dtype=complex))
+        SGate = Gate('sdg', 1, np.array([[1,0],[0,-1*j]], dtype=complex))
         self._append(SGate, [qubit], [])
         return
 
@@ -127,7 +127,7 @@ class QuantumCircuit(object):
 
     # T dagger gate
     def tdg(self, qubit):
-        TGate = Gate('t', 1, np.array([[1,0],[0,complex(1/math.sqrt(2),-1/math.sqrt(2))]]), dtype=complex)
+        TGate = Gate('tdg', 1, np.array([[1,0],[0,complex(1/math.sqrt(2),-1/math.sqrt(2))]]), dtype=complex)
         self._append(TGate, [qubit], [])
         return
 
