@@ -1,4 +1,4 @@
-#Implements a full adder circuit; builds on half adder
+#Implements a full adder circuit for any number of bits; builds on half adder
 
 from qiskit import QuantumRegister, ClassicalRegister, QuantumCircuit
 from numpy import pi
