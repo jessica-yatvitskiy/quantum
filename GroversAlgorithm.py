@@ -1,4 +1,4 @@
-#Grover's algorithm
+#Basic circuit implementing Grover's Algorithm
 from qiskit import QuantumRegister, ClassicalRegister, QuantumCircuit
 from numpy import pi
 
@@ -33,12 +33,12 @@ circuit.cz(qreg_q[1], qreg_q[0])
 #But, basically, we take the state vector that was the result of the Oracle, which has the correct "password" marked subtly.
 #Remember, it's marked in such a way that simply measuring our current state won't reveal the "password".
 #So, instead, we take the state vector given to us by the Oracle, and "amplify" this "marking", this difference from the other qubits.
-#We do this "reflecting" all states perpendicular to our current state vector across our state vector.
+#We do this by "reflecting" all states perpendicular to our current state vector across our state vector.
 #(Again, the reasoning for this is well explained in the article above).
 #An easy way to do this reflection is to:
 #1) Convert our state vector to an equal superposition of states, using Hadamard gates; call this new state S'.
 #2) Reflect all perpendicular vectors to S' over S'. This is done by negating all sub-states (01, 10, 11) other than 00.
-#3) Convert back to our state vector, while maintaining this negation.
+#3) Convert back to our state vector, while maintaining this phase shift.
 #This is all done by our Z, Z, CZ gates below.
 #Now, our state vector is in the desired form, such that measuring will now give us the correct "password"
 #with high probability.
